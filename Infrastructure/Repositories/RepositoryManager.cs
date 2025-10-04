@@ -21,6 +21,6 @@ internal class RepositoryManager : IRepositoryManager
     public IEmployeeRepository Employees => _employeeRepository.Value;
 
     public void Dispose() => _context.Dispose();
-    public void SaveChanges() => _context.SaveChanges();
+    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 
 }
