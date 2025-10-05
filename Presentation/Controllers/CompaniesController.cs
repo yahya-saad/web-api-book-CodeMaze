@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Shared.DTOs;
 
@@ -8,7 +9,14 @@ namespace Presentation.Controllers;
 public class CompaniesController(IServiceManager _service) : ControllerBase
 {
 
-    [HttpGet]
+    [HttpOptions]
+    public IActionResult GetCompaniesOptions()
+    {
+        Response.Headers.Append("Allow", "GET, OPTIONS, POST, PUT, DELETE");
+        return Ok();
+    }
+
+    [HttpGet(Name = "GetCompanies")]
     public async Task<IActionResult> GetCompanies()
     {
         var companies = await _service.CompanyService.GetAllCompaniesAsync(trackChanges: false);
@@ -30,7 +38,7 @@ public class CompaniesController(IServiceManager _service) : ControllerBase
         return Ok(companies);
     }
 
-    [HttpPost]
+    [HttpPost(Name = "CreateCompany")]
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyDto company)
     {
         var createdCompany = await _service.CompanyService.CreateCompanyAsync(company);
