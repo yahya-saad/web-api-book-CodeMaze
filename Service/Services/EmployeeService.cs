@@ -4,6 +4,7 @@ using Domain.Entities;
 using Service.Contracts;
 using Service.Exceptions;
 using Shared.DTOs;
+using Shared.RequestFeatures;
 
 namespace Service.Services;
 internal sealed class EmployeeService : IEmployeeService
@@ -28,14 +29,17 @@ internal sealed class EmployeeService : IEmployeeService
         return employeeDto;
     }
 
-    public async Task<IEnumerable<EmployeeDto>> GetEmployeesAsync(Guid companyId, bool trackChanges)
+    public async Task<(IEnumerable<EmployeeDto> employees, MetaData metaData)> GetEmployeesAsync(Guid companyId, EmployeeParameters employeeParameters, bool trackChanges)
     {
+        if (!employeeParameters.ValidAgeRange)
+            throw new MaxAgeRangeBadRequestException();
+
         await CheckIfCompanyExists(companyId, trackChanges);
 
-        var employees = await _repository.Employees.GetEmployeesAsync(companyId, trackChanges);
-        var employeesDto = _mapper.Map<IEnumerable<EmployeeDto>>(employees);
+        var employeesWithMetaData = await _repository.Employees.GetEmployeesAsync(companyId, employeeParameters, trackChanges);
+        var employeesDto = _mapper.Map<IEnumerable<EmployeeDto>>(employeesWithMetaData.Items);
 
-        return employeesDto;
+        return (employees: employeesDto, metaData: employeesWithMetaData.MetaData);
     }
 
     public async Task<EmployeeDto> CreateEmployeeAsync(Guid companyId, CreateEmployeeDto employee, bool trackChanges)

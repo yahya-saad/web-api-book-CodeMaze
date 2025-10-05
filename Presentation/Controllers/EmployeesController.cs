@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Shared.DTOs;
+using Shared.RequestFeatures;
+using System.Text.Json;
 
 namespace Presentation.Controllers;
 [ApiController]
@@ -8,9 +11,12 @@ namespace Presentation.Controllers;
 public class EmployeesController(IServiceManager _service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetEmployeesForCompany(Guid companyId)
+    public async Task<IActionResult> GetEmployeesForCompany(Guid companyId, [FromQuery] EmployeeParameters employeeParameters)
     {
-        var employees = await _service.EmployeeService.GetEmployeesAsync(companyId, trackChanges: false);
+        var (employees, metaData) = await _service.EmployeeService.GetEmployeesAsync(
+            companyId, employeeParameters, trackChanges: false);
+
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metaData));
         return Ok(employees);
     }
 
