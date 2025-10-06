@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using Shared.DTOs;
@@ -6,6 +7,7 @@ using Shared.DTOs;
 namespace Presentation.Controllers;
 [ApiController]
 [Route("api/companies")]
+[ApiVersion(1)]
 public class CompaniesController(IServiceManager _service) : ControllerBase
 {
 
@@ -17,6 +19,7 @@ public class CompaniesController(IServiceManager _service) : ControllerBase
     }
 
     [HttpGet(Name = "GetCompanies")]
+    [ResponseCache(Duration = 60)]
     public async Task<IActionResult> GetCompanies()
     {
         var companies = await _service.CompanyService.GetAllCompaniesAsync(trackChanges: false);

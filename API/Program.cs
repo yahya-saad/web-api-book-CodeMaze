@@ -2,6 +2,7 @@ using API.Extensions;
 using CompanyEmployees.Extensions;
 using Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using NLog;
 using Service;
 
@@ -19,6 +20,7 @@ builder.Services.AddControllers(cfg =>
 {
     cfg.RespectBrowserAcceptHeader = true;
     cfg.ReturnHttpNotAcceptable = true;
+    cfg.CacheProfiles.Add("120SecondsDuration", new CacheProfile { Duration = 120 });
 })
 .AddXmlDataContractSerializerFormatters()
 .AddApplicationPart(typeof(Presentation.AssemblyReference).Assembly);
@@ -39,6 +41,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 app.UseCors("CorsPolicy");
+app.UseResponseCaching();
 
 app.UseAuthorization();
 
