@@ -40,9 +40,12 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.All
 });
 
+app.UseRateLimiter();
 app.UseCors("CorsPolicy");
-app.UseResponseCaching();
+//app.UseResponseCaching();
+app.UseOutputCache();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251006205010_CreatingIdentityTables")]
+    partial class CreatingIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -115,39 +118,6 @@ namespace Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
-                });
-
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -244,20 +214,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "8D04DCE2-969A-4F1D-A0D5-9A1C8C0E8B33",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = "FAD04DCE2-969A-4F1D-A0D5-9A1C8C0E8B99",
-                            Name = "Manager",
-                            NormalizedName = "MANAGER"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -373,17 +329,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("Domain.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("RefreshTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -438,11 +383,6 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Entities.Company", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("Domain.Entities.User", b =>
-                {
-                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Service.Contracts;
 using Shared.DTOs;
 
@@ -19,7 +20,8 @@ public class CompaniesController(IServiceManager _service) : ControllerBase
     }
 
     [HttpGet(Name = "GetCompanies")]
-    [ResponseCache(Duration = 60)]
+    //[ResponseCache(Duration = 60)]
+    [OutputCache(Duration = 60)]
     public async Task<IActionResult> GetCompanies()
     {
         var companies = await _service.CompanyService.GetAllCompaniesAsync(trackChanges: false);

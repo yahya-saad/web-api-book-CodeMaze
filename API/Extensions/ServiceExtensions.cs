@@ -1,5 +1,8 @@
 ﻿namespace CompanyEmployees.Extensions;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.RateLimiting;
+
 public static class ServiceExtensions
 {
     public static IServiceCollection AddApiConfiguration(this IServiceCollection services)
@@ -8,6 +11,7 @@ public static class ServiceExtensions
         services.ConfigureIISIntegration();
         services.ConfigureVersioning();
         services.ConfigureResponseCaching();
+        services.ConfigureRateLimitingOptions();
 
         return services;
     }
@@ -43,6 +47,69 @@ public static class ServiceExtensions
 
     private static void ConfigureResponseCaching(this IServiceCollection services)
     {
-        services.AddResponseCaching();
+        //services.AddResponseCaching();
+        services.AddOutputCache(opt =>
+        {
+            opt.DefaultExpirationTimeSpan = TimeSpan.FromSeconds(60);
+            opt.AddPolicy("ShortTerm", policy => policy.Expire(TimeSpan.FromSeconds(30)));
+            opt.AddPolicy("LongTerm", policy => policy.Expire(TimeSpan.FromMinutes(5)));
+        });
     }
+
+    private static void ConfigureRateLimitingOptions(this IServiceCollection services)
+    {
+        services.AddRateLimiter(opt =>
+        {
+            opt.OnRejected = async (context, token) =>
+            {
+                var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var metadata)
+                    ? metadata.TotalSeconds
+                    : (double?)null;
+
+                var message = retryAfter is not null
+                        ? $"You have exceeded the allowed number of requests. Try again after {retryAfter} second(s)."
+                        : "You have exceeded the allowed number of requests. Try again later.";
+
+                var problemDetails = new ProblemDetails
+                {
+                    Title = "Too Many Requests",
+                    Status = StatusCodes.Status429TooManyRequests,
+                    Detail = message,
+                    Instance = context.HttpContext.Request.Path
+                };
+
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.HttpContext.Response.ContentType = "application/problem+json";
+
+                await context.HttpContext.Response.WriteAsJsonAsync(problemDetails, token);
+            };
+
+
+            opt.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                RateLimitPartition.GetFixedWindowLimiter("GlobalLimiter",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 5,
+                        QueueLimit = 2,
+                        Window = TimeSpan.FromMinutes(1),
+                    }
+                )
+            );
+
+            opt.AddPolicy("SpecificPolicy", context =>
+                RateLimitPartition.GetFixedWindowLimiter("SpecificLimiter",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 30,
+                        Window = TimeSpan.FromMinutes(1),
+                    }
+                )
+            );
+
+        });
+    }
+
+
 }
