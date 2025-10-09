@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Presentation.Extensions;
 using Service.Contracts;
+using Shared.DTOs;
 
 namespace Presentation.Controllers;
 [ApiController]
@@ -10,17 +12,19 @@ namespace Presentation.Controllers;
 [Route("api/v{v:apiversion}/companies")]
 [ResponseCache(CacheProfileName = "120SecondsDuration")]
 [EnableRateLimiting("SpecificPolicy")]
-public class CompaniesV2Controller(IServiceManager service) : ControllerBase
+public class CompaniesV2Controller(IServiceManager service) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetCompanies()
     {
-        var companies = await service.CompanyService
+        var result = await service.CompanyService
         .GetAllCompaniesAsync(trackChanges: false);
 
-        var companiesV2 = companies.Select(x => $"{x.Name} V2");
+        var companies = result.GetResult<IEnumerable<CompanyDto>>();
 
-        return Ok(companiesV2);
+        var response = companies.Select(c => $"{c.Name} v2");
+
+        return Ok(response);
     }
 }

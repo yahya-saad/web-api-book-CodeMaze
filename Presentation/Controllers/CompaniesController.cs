@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Presentation.Extensions;
 using Service.Contracts;
 using Shared.DTOs;
 
@@ -9,7 +10,7 @@ namespace Presentation.Controllers;
 [ApiController]
 [Route("api/companies")]
 [ApiVersion(1)]
-public class CompaniesController(IServiceManager _service) : ControllerBase
+public class CompaniesController(IServiceManager _service) : ApiControllerBase
 {
 
     [HttpOptions]
@@ -26,7 +27,8 @@ public class CompaniesController(IServiceManager _service) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCompanies()
     {
-        var companies = await _service.CompanyService.GetAllCompaniesAsync(trackChanges: false);
+        var result = await _service.CompanyService.GetAllCompaniesAsync(trackChanges: false);
+        var companies = result.GetResult<IEnumerable<CompanyDto>>();
         return Ok(companies);
     }
 
@@ -36,7 +38,12 @@ public class CompaniesController(IServiceManager _service) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCompany(Guid id)
     {
-        var company = await _service.CompanyService.GetCompanyAsync(id, trackChanges: false);
+        var result = await _service.CompanyService.GetCompanyAsync(id, trackChanges: false);
+
+        if (!result.Success)
+            return ProcessError(result);
+
+        var company = result.GetResult<CompanyDto>();
         return Ok(company);
     }
 
