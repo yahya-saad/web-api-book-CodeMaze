@@ -1,6 +1,8 @@
 ﻿namespace CompanyEmployees.Extensions;
-using Asp.Versioning;
+
+using API.Configurations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using System.Threading.RateLimiting;
 
 public static class ServiceExtensions
@@ -12,6 +14,7 @@ public static class ServiceExtensions
         services.ConfigureVersioning();
         services.ConfigureResponseCaching();
         services.ConfigureRateLimitingOptions();
+        services.ConfigureSwagger();
 
         return services;
     }
@@ -41,8 +44,13 @@ public static class ServiceExtensions
         {
             opt.ReportApiVersions = true;
             opt.AssumeDefaultVersionWhenUnspecified = true;
-            opt.DefaultApiVersion = new ApiVersion(1, 0);
-        }).AddMvc();
+            opt.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+        }).AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
+
     }
 
     private static void ConfigureResponseCaching(this IServiceCollection services)
@@ -111,5 +119,36 @@ public static class ServiceExtensions
         });
     }
 
+    private static void ConfigureSwagger(this IServiceCollection services)
+    {
+        services.AddSwaggerGen(o =>
+        {
+            o.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Name = "Authorization",
+                Description = "JWT Authorization header using the Bearer scheme.",
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+            });
+
+            o.AddSecurityRequirement(new OpenApiSecurityRequirement
+             {
+                 {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new List<string>()
+                 }
+             });
+        });
+        services.ConfigureOptions<ConfigureSwaggerGenOptions>();
+
+    }
 
 }

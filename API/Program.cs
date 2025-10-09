@@ -1,9 +1,12 @@
 using API.Extensions;
+using Asp.Versioning.ApiExplorer;
 using CompanyEmployees.Extensions;
 using Infrastructure;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
+using Scalar.AspNetCore;
 using Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,11 +28,38 @@ builder.Services.AddControllers(cfg =>
 .AddXmlDataContractSerializerFormatters()
 .AddApplicationPart(typeof(Presentation.AssemblyReference).Assembly);
 
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
 if (app.Environment.IsProduction())
     app.UseHsts();
+
+await app.ApplyMigrationsAsync<ApplicationDbContext>();
+
+if (app.Environment.IsDevelopment())
+{
+    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
+                description.GroupName.ToUpperInvariant()
+            );
+            options.DocumentTitle = "CodeMaze Docs";
+        }
+    });
+
+    app.MapScalarApiReference(options =>
+    {
+        options.AddDocument("v1", "Production API", "/swagger/v1/swagger.json")
+               .AddDocument("v2", "Beta API", "/swagger/v2/swagger.json");
+    });
+}
 
 app.UseHttpsRedirection();
 
